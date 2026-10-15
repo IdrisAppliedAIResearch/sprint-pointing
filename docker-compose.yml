@@ -1,0 +1,21 @@
+# The Jira MCP server. It holds no credentials: every request carries the session's PAT.
+services:
+  jira-mcp:
+    image: ghcr.io/sooperset/mcp-atlassian@sha256:5b7c9b64d4eb3210cab74be8bf3e6aeea9ed14f3042dc59ba5c5287bd4dbe466
+    command: --transport streamable-http --stateless --host 0.0.0.0 --port 9000
+    environment:
+      JIRA_URL: ${JIRA_URL:?set JIRA_URL in .env}
+      ATLASSIAN_EXTERNAL_AUTH_ENABLE: "true"
+      TOOLSETS: jira_issues,jira_agile
+      ENABLED_TOOLS: jira_get_sprints_from_board,jira_search,jira_update_issue
+      JIRA_PROJECTS_FILTER: ${JIRA_PROJECT_KEY:?set JIRA_PROJECT_KEY in .env}
+      JIRA_TIMEOUT: "20"
+      FASTMCP_SHOW_SERVER_BANNER: "false"
+      FASTMCP_CHECK_FOR_UPDATES: "off"
+    ports:
+      - "127.0.0.1:9800:9000"
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    restart: unless-stopped

@@ -1,0 +1,15 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Validate Sites deployment",
+			"type": "shell",
+			"command": "npm run build && bash hosting/site/scripts/build.sh && npm run typecheck && node --check hosting/launch-local.mjs && node hosting/site/scripts/validate-artifact.mjs",
+			"isBackground": false,
+			"problemMatcher": [
+				"$tsc"
+			],
+			"group": "build"
+		}
+	]
+}

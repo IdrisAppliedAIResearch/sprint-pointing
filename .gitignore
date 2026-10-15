@@ -1,0 +1,10 @@
+node_modules
+dist
+.env
+test-results
+playwright-report
+.sites-runtime
+hosting/site/.git
+hosting/site/.sites-checkout
+hosting/site/worker/assets.json
+hosting/site/shared

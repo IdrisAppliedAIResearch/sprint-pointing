@@ -1,0 +1,90 @@
+.start {
+  max-width: 555px;
+  margin: 60px auto;
+  padding: 48px 67px;
+}
+
+.start h1 {
+  margin: 0;
+  font-size: 30px;
+  font-weight: 400;
+  text-align: center;
+}
+
+.start > p {
+  margin: 8px 0 40px;
+  color: var(--gray-500);
+  font-size: 14px;
+  text-align: center;
+}
+
+.start > .start-note {
+  margin: 30px 0 0;
+  text-wrap: balance;
+}
+
+.start-field,
+.start > .select {
+  display: block;
+  width: 100%;
+  margin-top: 16px;
+}
+
+.start-field {
+  position: relative;
+}
+
+.start-range {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 16px;
+  color: var(--gray-500);
+  font-size: 14px;
+}
+
+.start-range .select {
+  width: 88px;
+  color: var(--black);
+}
+
+.start-field svg {
+  position: absolute;
+  top: 10px;
+  left: 16px;
+  color: var(--gray);
+  pointer-events: none;
+}
+
+.start-field .input {
+  width: 100%;
+  padding-left: 52px;
+}
+
+.start .btn-block {
+  display: flex;
+  margin-top: 35px;
+}
+
+.start-or {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin: 30px 0;
+  color: var(--gray-500);
+  font-size: 14px;
+}
+
+.start-or::before,
+.start-or::after {
+  content: '';
+  flex: 1;
+  border-top: 1px solid var(--gray-300);
+}
+
+@media (max-width: 600px) {
+  .start {
+    margin-top: 0;
+    padding: 20px;
+  }
+}

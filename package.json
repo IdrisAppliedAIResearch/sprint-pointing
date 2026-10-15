@@ -1,0 +1,45 @@
+{
+  "name": "sprint-pointing",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "dev": "node --run dev:server & node --run dev:web",
+    "dev:server": "node --watch --env-file-if-exists=.env server/main.ts",
+    "dev:web": "vite",
+    "build": "vite build",
+    "start": "node --env-file-if-exists=.env server/main.ts",
+    "typecheck": "tsc -p . && tsc -p web",
+    "test": "vitest run",
+    "e2e": "playwright test",
+    "e2e:cloud": "CLOUD_E2E=1 playwright test"
+  },
+  "dependencies": {
+    "@fastify/cookie": "11.1.3",
+    "@fastify/static": "10.1.6",
+    "@fastify/websocket": "11.3.4",
+    "@modelcontextprotocol/client": "2.3.1",
+    "fastify": "5.12.7",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@fontsource/lato": "5.3.0",
+    "@fontsource/open-sans": "5.3.0",
+    "@modelcontextprotocol/server": "2.3.1",
+    "@playwright/test": "1.64.1",
+    "@types/node": "25.9.9",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@types/ws": "8.18.2",
+    "@vitejs/plugin-react": "6.1.2",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "react-router": "8.4.0",
+    "typescript": "7.0.2",
+    "vite": "8.3.4",
+    "vitest": "5.0.4",
+    "ws": "8.22.0"
+  }
+}
