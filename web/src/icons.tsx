@@ -108,6 +108,12 @@ export const Info = (p: Props) => (
   </Icon>
 );
 
+export const Move = (p: Props) => (
+  <Icon {...p}>
+    <path d="M10.5 2.5v16m-8-8h16M8 5l2.5-2.5L13 5m-5 11 2.5 2.5L13 16M5 8l-2.5 2.5L5 13m11-5 2.5 2.5L16 13" />
+  </Icon>
+);
+
 export const XCircle = (p: Props) => (
   <Icon {...p}>
     <circle cx="10.5" cy="10.5" r="8" />

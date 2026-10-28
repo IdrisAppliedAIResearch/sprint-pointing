@@ -48,11 +48,14 @@ REST API directly. Nothing runs on the moderator's computer. To have ChatGPT do 
 2. Pick a sprint and the tickets to estimate. Share the invite link; each teammate joins with a name.
 3. **Start**, everyone votes, the cards flip when everyone has voted (or press **Flip Cards**), then **Finish Voting**
    with the final estimate. In a Jira session that writes Story Points immediately.
-   The ticket's description shows while voting. The moderator edits it, or the summary in the ticket's details, with
-   the pen button; ✓ writes it to Jira as wiki markup.
-4. **Completed Stories** is the index. Change an estimate there, or open a story to see its history and revert to an
-   earlier value (including the value Jira had before the meeting). Each change goes to Jira at once; failures show
-   **Retry**.
+   The ticket's description shows while voting; everyone can size its text for themselves with **a** and **A**, and
+   drag **✥** to resize the box. The moderator edits it, or the summary above it, with the pen button; ✓ writes it to
+   Jira (the description as wiki markup).
+   The moderator can click any story in the lists to move everyone to it and vote, ahead or back, an estimated one
+   too. It asks first only when that would drop votes already cast.
+4. **Completed Stories** is the index. Change an estimate there, or open a story's details (ⓘ) to see its history and
+   revert to an earlier value (including the value Jira had before the meeting). Each change goes to Jira at once;
+   failures show **Retry**.
 5. **Export** downloads the estimates as CSV. **End session** ends it for everyone.
 
 ## The token

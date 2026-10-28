@@ -1,24 +1,20 @@
 import { pointsLabel, type RoomView, type Story } from '../../../shared/protocol.ts';
 import { External, History } from '../icons.tsx';
-import { Modal, useConfirm, useToast } from '../ui.tsx';
-import { useAct, useEditStory, useSetPoints } from './act.ts';
+import { Modal } from '../ui.tsx';
+import { useEditStory, useSetPoints, useVoteOn } from './act.ts';
 import Editable from './Editable.tsx';
 import Wiki from './Wiki.tsx';
 
 export default function StoryDetails({ room, story, onClose }: { room: RoomView; story: Story; onClose: () => void }) {
-  const act = useAct();
-  const toast = useToast();
-  const confirm = useConfirm();
   const setPoints = useSetPoints();
+  const voteOn = useVoteOn();
   const isMod = room.me === room.ownerId;
   const jira = room.mode === 'jira';
 
   const edit = useEditStory();
 
   async function vote() {
-    if ((room.round === 'voting' || room.round === 'revealed') && !(await confirm('Stop the current vote and vote on this story?', 'Vote'))) return;
-    onClose();
-    act(`/api/rooms/${room.id}/start`, { storyId: story.id }, () => toast('Session started'));
+    if (await voteOn(room, story)) onClose();
   }
 
   return (

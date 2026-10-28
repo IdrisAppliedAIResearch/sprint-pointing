@@ -1,4 +1,4 @@
-import { cardPoints, type RoomView } from '../../../shared/protocol.ts';
+import type { RoomView } from '../../../shared/protocol.ts';
 import { Coffee } from '../icons.tsx';
 
 const COLORS = ['#f8e61b', '#225277', '#1694a2', '#7ec851', '#9cf81b', '#0b756a', '#4a99e8', '#6f4aa5', '#e845d0', '#e8457e', '#9b2c48', '#e51515', '#f8b21b'];
@@ -11,7 +11,6 @@ export default function Results({ room }: { room: RoomView }) {
       const count = votes.filter((v) => v === card).length;
       return { card, count, color: COLORS[i], pct: (count / votes.length) * 100 };
     });
-  const numbers = votes.map(cardPoints).filter((n) => n !== null);
   let at = 0;
   const stops = slices.map((s) => `${s.color} ${at}% ${(at += s.pct)}%`);
 
@@ -22,9 +21,6 @@ export default function Results({ room }: { room: RoomView }) {
           <div className="donut-center">
             <span className="donut-players">{votes.length} {votes.length === 1 ? 'Player' : 'Players'}</span>
             <span className="donut-voted">voted</span>
-            {numbers.length > 0 && (
-              <span className="donut-avg">Avg: {(numbers.reduce((a, b) => a + b, 0) / numbers.length).toFixed(1)}</span>
-            )}
           </div>
         </div>
         <ul className={slices.length > 5 ? 'legend two' : 'legend'}>

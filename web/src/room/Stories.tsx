@@ -1,8 +1,8 @@
 import { useState, type MouseEvent } from 'react';
 import { cardPoints, pointsLabel, type RoomView, type Story } from '../../../shared/protocol.ts';
-import { Download, Plus, Refresh, Trash } from '../icons.tsx';
+import { Download, Info, Plus, Refresh, Trash } from '../icons.tsx';
 import { useConfirm, useToast } from '../ui.tsx';
-import { useAct, useSetPoints } from './act.ts';
+import { useAct, useSetPoints, useVoteOn } from './act.ts';
 
 const TABS = { active: 'Active', completed: 'Completed', all: 'All' };
 
@@ -12,6 +12,7 @@ export default function Stories({ room, onAdd, onOpen }: { room: RoomView; onAdd
   const act = useAct();
   const toast = useToast();
   const confirm = useConfirm();
+  const voteOn = useVoteOn();
   const [tab, setTab] = useState<Tab>('active');
   const [syncing, setSyncing] = useState(false);
   const isMod = room.me === room.ownerId;
@@ -34,8 +35,17 @@ export default function Stories({ room, onAdd, onOpen }: { room: RoomView; onAdd
     }
   }
 
-  function open(e: MouseEvent, story: Story) {
-    if (!(e.target as Element).closest('a, button, select')) onOpen(story.id);
+  // The moderator's click moves everyone to that story, back or ahead; the current story, or anyone else's click, opens
+  // the details.
+  const jumps = (story: Story) => isMod && story.id !== room.storyId;
+
+  function pick(story: Story) {
+    if (jumps(story)) voteOn(room, story);
+    else onOpen(story.id);
+  }
+
+  function click(e: MouseEvent, story: Story) {
+    if (!(e.target as Element).closest('a, button, select')) pick(story);
   }
 
   function rowClass(story: Story) {
@@ -96,11 +106,11 @@ export default function Stories({ room, onAdd, onOpen }: { room: RoomView; onAdd
           )}
           <tbody>
             {lists[tab].map((s) => (
-              <tr key={s.id} className={rowClass(s)} onClick={(e) => open(e, s)}>
+              <tr key={s.id} className={rowClass(s)} onClick={(e) => click(e, s)}>
                 <td>
                   <div className="stories-title">
                     {s.url && <a href={s.url} target="_blank" rel="noreferrer">{s.key}</a>}{' '}
-                    <button onClick={() => onOpen(s.id)}>{s.summary}</button>
+                    <button title={jumps(s) ? 'Vote on this story' : undefined} onClick={() => pick(s)}>{s.summary}</button>
                   </div>
                   {jira && <div className="stories-meta">{s.type} · {s.status}</div>}
                 </td>
@@ -114,9 +124,12 @@ export default function Stories({ room, onAdd, onOpen }: { room: RoomView; onAdd
                 )}
                 {isMod && (
                   <td className="stories-icon">
-                    {s.id !== room.storyId && (
-                      <button title="Delete story" aria-label="Delete story" onClick={() => remove(s)}><Trash /></button>
-                    )}
+                    <div>
+                      <button title="Story details" aria-label="Story details" onClick={() => onOpen(s.id)}><Info /></button>
+                      {s.id !== room.storyId && (
+                        <button title="Delete story" aria-label="Delete story" onClick={() => remove(s)}><Trash /></button>
+                      )}
+                    </div>
                   </td>
                 )}
               </tr>
