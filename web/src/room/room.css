@@ -43,8 +43,16 @@
   overflow-wrap: anywhere;
 }
 
-.story-title {
+.story-head {
   padding: 0 20px 20px;
+}
+
+.story-head > .editable {
+  padding-left: 32px; /* balances the pen's room, so the title stays centred */
+}
+
+.story-head .input {
+  font-size: 20px;
 }
 
 .story-open {
@@ -56,18 +64,76 @@
   text-decoration: underline;
 }
 
+/* Each viewer picks the font size (TextSize); the text, its height limit and the editor scale with it. */
 .story-description {
-  max-height: 160px;
   margin: 0 0 20px;
-  padding: 12px 16px;
-  overflow-y: auto;
   border: 1px solid var(--gray-300);
   border-radius: 4px;
   background: var(--white);
   color: var(--gray-700);
   font-size: 14px;
-  line-height: 20px;
+  line-height: 1.43;
   overflow-wrap: anywhere;
+}
+
+/* Fits the text up to about seven lines at any size, or the height the viewer dragged it to. */
+.story-text {
+  height: var(--box-height, auto);
+  max-height: var(--box-height, 11em);
+  padding: 12px 16px 0;
+  overflow-y: auto;
+}
+
+.story-text .textarea {
+  font-size: inherit;
+}
+
+.story-description .wiki h4 {
+  font-size: 1.07em;
+}
+
+.story-description .wiki :is(code, pre) {
+  font-size: 0.93em;
+}
+
+.description-size {
+  display: flex;
+  justify-content: flex-end;
+  gap: 2px;
+  padding: 0 6px 4px;
+}
+
+.description-size button {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 4px;
+  color: var(--gray-700);
+  font-weight: 600;
+  line-height: 1;
+}
+
+.description-size button:hover:not(:disabled) {
+  background: var(--white-500);
+  color: var(--blue);
+}
+
+.description-size button:disabled {
+  opacity: 0.35;
+}
+
+.box-resize {
+  cursor: ns-resize;
+  touch-action: none; /* a touch drag resizes instead of scrolling the page */
+}
+
+.text-smaller {
+  font-size: 13px;
+}
+
+.text-larger {
+  font-size: 18px;
 }
 
 /* Deck */
@@ -231,11 +297,6 @@
 .donut-voted {
   color: var(--gray-500);
   font-size: 14px;
-}
-
-.donut-avg {
-  font-size: 20px;
-  font-weight: 300;
 }
 
 .legend {
@@ -720,6 +781,11 @@ button.player-avatar:hover {
   line-height: 16px;
 }
 
+.stories-icon div {
+  display: flex;
+  gap: 4px;
+}
+
 .stories-icon button {
   display: flex;
   padding: 4px;
@@ -778,7 +844,8 @@ button.player-avatar:hover {
   color: var(--blue);
 }
 
-.story-description:has(.editing) {
+.story-text:has(.editing) {
+  height: auto;
   max-height: none;
 }
 
@@ -790,6 +857,12 @@ button.player-avatar:hover {
 
 .editing > .input {
   flex: 1;
+}
+
+.editing > .textarea {
+  height: clamp(240px, 45vh, 480px);
+  padding: 12px 16px;
+  line-height: 1.5;
 }
 
 .edit-actions {

@@ -27,7 +27,7 @@ async function invite(alice: Page, bob: Page, joinShot: string) {
 }
 
 async function expectNoModeratorControls(page: Page) {
-  const controls = /^(Start|Add Stories|Flip Cards|Finish Voting|Reset Timer|Clear Votes|Skip Story|Next Story|Add Tickets|Sync|Export|End session|Delete story|Retry|Push|Revert to .+|Edit .+|Save .+)$/;
+  const controls = /^(Start|Add Stories|Flip Cards|Finish Voting|Reset Timer|Clear Votes|Skip Story|Next Story|Add Tickets|Sync|Export|End session|Delete story|Story details|Retry|Push|Revert to .+|Edit .+|Save .+)$/;
   await expect(page.getByRole('button', { name: controls })).toHaveCount(0);
   await expect(page.getByRole('combobox')).toHaveCount(0);
 }
@@ -104,20 +104,26 @@ test('Jira session: pick tickets, invite, vote, save to Jira, change and revert 
   await shot(alice, 'jira-voting-alice');
   await shot(bob, 'jira-voting-bob');
 
-  // Story Details opens from the keyboard, and voting on another story asks first: it would drop this round's votes.
+  // Moving to another story asks first, from the list or from Story Details (both work from the keyboard): it would drop
+  // this round's votes.
+  const stop = alice.getByRole('alertdialog', { name: 'Stop the current vote and vote on this story?' });
   await alice.getByRole('button', { name: 'Update sprint picker' }).press('Enter');
+  await expect(stop).toBeVisible();
+  await shot(alice, 'jira-vote-confirm-alice');
+  await stop.getByRole('button', { name: 'Cancel' }).click();
+  await alice.getByRole('row', { name: /Update sprint picker/ }).getByRole('button', { name: 'Story details' }).press('Enter');
   const details = alice.getByRole('dialog', { name: 'Story Details' });
   await details.getByRole('button', { name: 'Vote on this story' }).click();
-  await expect(alice.getByRole('alertdialog', { name: 'Stop the current vote and vote on this story?' })).toBeVisible();
-  await shot(alice, 'jira-vote-confirm-alice');
-  await alice.getByRole('alertdialog').getByRole('button', { name: 'Cancel' }).click();
+  await expect(stop).toBeVisible();
+  await stop.getByRole('button', { name: 'Cancel' }).click();
   await details.getByRole('button', { name: 'Close' }).click();
+  await expect(alice.getByRole('heading', { name: /^FAKE-1 / })).toBeVisible();
   await expect(alice.getByRole('button', { name: '5', exact: true, pressed: true })).toBeVisible();
 
   await bob.getByRole('button', { name: '8', exact: true }).click();
   for (const page of [alice, bob]) {
     await expect(page.getByText('2 Players')).toBeVisible();
-    await expect(page.getByText('Avg: 6.5')).toBeVisible();
+    await expect(page.getByText(/Avg/)).toHaveCount(0);
   }
   await expect(aliceForBob.locator('.player-vote')).toHaveText('5');
   await expect(alice.getByRole('complementary').getByRole('combobox')).toHaveValue('8');
@@ -179,20 +185,33 @@ test('the moderator edits the current ticket in Jira and everyone sees it at onc
   // The pen in the description box above the cards: raw markup (Enter is a new line), ✓ saves, shown formatted.
   const box = alice.locator('.story-description');
   await box.getByRole('button', { name: 'Edit description' }).click();
+  expect((await box.getByRole('textbox').boundingBox())!.height).toBeGreaterThanOrEqual(240); // room to read the markup
+  await expect(box.getByRole('textbox')).toHaveCSS('font-size', '14px'); // the viewer's text size
   await alice.keyboard.type('h3. Notes\n* *short* first\n** then offer details\n||Field||Value||\n|Guide|[style guide|https://example.com/guide]|');
   await shot(alice, 'edit-alice');
   await box.getByRole('button', { name: 'Save description' }).click();
   await expect(toasts).toHaveCount(1);
   await expect(box.locator('.wiki strong')).toHaveText('short');
 
-  // The story dialog has the same pens: the summary saves with Enter.
+  // The pen beside the title above the cards edits the summary: Enter saves.
+  const head = alice.locator('.story-head');
+  await head.getByRole('button', { name: 'Edit summary' }).click();
+  await expect(head.getByRole('textbox', { name: 'Summary' })).toHaveValue('Document results chart');
+  await alice.keyboard.press('ControlOrMeta+A');
+  await alice.keyboard.type('Results chart for the sprint');
+  await shot(alice, 'edit-title-alice');
+  await alice.keyboard.press('Enter');
+  await expect(toasts).toHaveCount(2);
+  await expect(bob.getByRole('heading', { name: 'FAKE-4 Results chart for the sprint' })).toBeVisible();
+
+  // The story dialog has the same pens.
   await alice.getByRole('heading', { name: /^FAKE-4 / }).getByRole('button').click();
   const details = alice.getByRole('dialog', { name: 'Story Details' });
   await details.getByRole('button', { name: 'Edit summary' }).click();
   await alice.keyboard.press('ControlOrMeta+A');
   await alice.keyboard.type('Sprint summary in 40 words');
   await alice.keyboard.press('Enter');
-  await expect(toasts).toHaveCount(2);
+  await expect(toasts).toHaveCount(3);
   await expect(details.getByText('Sprint summary in 40 words')).toBeVisible();
 
   // ✕ and Escape drop a draft; Escape doesn't close the dialog.
@@ -205,7 +224,7 @@ test('the moderator edits the current ticket in Jira and everyone sees it at onc
   await alice.keyboard.press('Escape');
   await expect(details.getByText('Sprint summary in 40 words')).toBeVisible();
   await expect(details.locator('.wiki strong')).toHaveText('short');
-  await expect(toasts).toHaveCount(2);
+  await expect(toasts).toHaveCount(3);
 
   await expect(bob.getByRole('heading', { name: 'FAKE-4 Sprint summary in 40 words' })).toBeVisible();
   await bob.getByRole('heading', { name: /^FAKE-4 / }).getByRole('button').click();
@@ -218,6 +237,124 @@ test('the moderator edits the current ticket in Jira and everyone sees it at onc
   await expect(bobDetails.getByRole('textbox')).toHaveCount(0);
   await expectNoModeratorControls(bob);
   await shot(bob, 'edit-bob');
+
+  // Everyone sizes the description's text for themselves with a and A, within limits; their browser remembers it.
+  await bobDetails.getByRole('button', { name: 'Close' }).click();
+  const larger = about.getByRole('button', { name: 'Larger text' });
+  const smaller = about.getByRole('button', { name: 'Smaller text' });
+  await expect(about).toHaveCSS('font-size', '14px');
+  await larger.click();
+  await expect(about).toHaveCSS('font-size', '16px');
+  await expect(box).toHaveCSS('font-size', '14px'); // Alice's is her own
+  for (let i = 0; i < 4; i++) await larger.click();
+  await expect(about).toHaveCSS('font-size', '24px');
+  await expect(larger).toBeDisabled();
+  await shot(bob, 'text-size-bob');
+  await bob.reload();
+  await expect(about).toHaveCSS('font-size', '24px');
+  for (let i = 0; i < 6; i++) await smaller.click();
+  await expect(about).toHaveCSS('font-size', '12px');
+  await expect(smaller).toBeDisabled();
+
+  // The handle beside them resizes the box, by dragging or with the arrow keys, within limits; it is remembered too.
+  const height = (page: Page) => page.locator('.story-text').evaluate((el) => (el as HTMLElement).offsetHeight);
+  const resize = about.getByRole('button', { name: 'Resize box' });
+  async function drag(by: number) {
+    const at = (await resize.boundingBox())!;
+    await bob.mouse.move(at.x + at.width / 2, at.y + at.height / 2);
+    await bob.mouse.down();
+    await bob.mouse.move(at.x + at.width / 2, at.y + at.height / 2 + by, { steps: 5 });
+    await bob.mouse.up();
+  }
+  const start = await height(bob);
+  await drag(100);
+  await expect.poll(() => height(bob)).toBe(start + 100);
+  await resize.press('ArrowUp');
+  await expect.poll(() => height(bob)).toBe(start + 80);
+  await shot(bob, 'resize-bob');
+  await bob.reload();
+  await expect.poll(() => height(bob)).toBe(start + 80);
+  await drag(-(start + 80));
+  await expect.poll(() => height(bob)).toBe(60);
+  await bob.close();
+
+  // Editing opens the whole editor, whatever the box's height.
+  await details.getByRole('button', { name: 'Close' }).click();
+  const before = await height(alice);
+  await box.getByRole('button', { name: 'Resize box' }).press('ArrowUp');
+  await expect.poll(() => height(alice)).toBe(before - 20);
+  await box.getByRole('button', { name: 'Edit description' }).click();
+  expect(await height(alice)).toBeGreaterThanOrEqual(240);
+});
+
+test('the moderator moves everyone to any story from the lists, ahead or back', async ({ page: alice, browser }) => {
+  await alice.goto('/');
+  await alice.getByPlaceholder('Enter your name').fill('Alice');
+  await alice.getByRole('button', { name: 'Use custom tickets' }).click();
+  const dialog = alice.getByRole('dialog', { name: 'Add Custom Tickets' });
+  await dialog.getByRole('textbox').fill('Login page\nVoting cards\nResults chart\nExport CSV');
+  await dialog.getByRole('button', { name: 'Add Tickets' }).click();
+  const bob = await browser.newPage();
+  await invite(alice, bob, 'jump-join-bob');
+
+  const title = (page: Page) => page.locator('.story-title');
+  const row = (name: string) => alice.getByRole('row', { name });
+  const stop = alice.getByRole('alertdialog', { name: 'Stop the current vote and vote on this story?' });
+
+  // Before the start, and while nobody has voted, a click starts voting on that story at once.
+  await row('Results chart').click();
+  await expect(title(bob)).toHaveText('Results chart');
+  await row('Export CSV').click();
+  await expect(title(bob)).toHaveText('Export CSV');
+  await expect(row('Export CSV')).toHaveClass('current');
+  await shot(alice, 'jump-voting-alice');
+  await alice.getByRole('button', { name: '3', exact: true }).click();
+  await bob.getByRole('button', { name: '5', exact: true }).click();
+  await alice.getByRole('button', { name: 'Finish Voting' }).click();
+  await expect(alice.getByText('Story estimate was saved')).toBeVisible();
+
+  // Back to the first story from All Stories.
+  await alice.getByRole('button', { name: /^All/ }).click();
+  await row('Login page').click();
+  await expect(title(bob)).toHaveText('Login page');
+
+  // Once someone has voted, moving on asks first; Vote drops those votes.
+  await alice.getByRole('button', { name: '2', exact: true }).click();
+  await row('Voting cards').click();
+  await stop.getByRole('button', { name: 'Vote' }).click();
+  await expect(title(bob)).toHaveText('Voting cards');
+  await expect(alice.getByRole('button', { name: '2', exact: true })).toHaveAttribute('aria-pressed', 'false');
+
+  // Back to an estimated story from Completed Stories: a new vote replaces its estimate.
+  await alice.getByRole('button', { name: /^Completed/ }).click();
+  await row('Export CSV').getByRole('cell').first().click();
+  await expect(title(bob)).toHaveText('Export CSV');
+  await alice.getByRole('button', { name: '8', exact: true }).click();
+  await bob.getByRole('button', { name: '8', exact: true }).click();
+  await alice.getByRole('button', { name: 'Finish Voting' }).click();
+  await expect(row('Export CSV').getByRole('combobox')).toHaveValue('8');
+
+  // The current story, the ⓘ button, and a teammate's click open Story Details instead.
+  await row('Export CSV').getByRole('cell').first().click();
+  const details = alice.getByRole('dialog', { name: 'Story Details' });
+  await expect(details.locator('.history > li')).toContainText(['5 → 8 · Alice', '— → 5 · Alice']);
+  await details.getByRole('button', { name: 'Close' }).click();
+  await alice.getByRole('button', { name: /^All/ }).click();
+  await row('Results chart').getByRole('button', { name: 'Story details' }).click();
+  await expect(details.locator('dt:has-text("Summary:") + dd')).toHaveText('Results chart');
+  await details.getByRole('button', { name: 'Close' }).click();
+  await bob.getByRole('row', { name: 'Login page' }).click();
+  await expect(bob.getByRole('dialog', { name: 'Story Details' })).toContainText('Login page');
+  await expect(title(alice)).toHaveText('Export CSV');
+  await expectNoModeratorControls(bob);
+
+  // An unsaved summary draft stays behind with its story.
+  await alice.locator('.story-head').getByRole('button', { name: 'Edit summary' }).click();
+  await alice.keyboard.type(' draft');
+  await row('Results chart').click();
+  await expect(title(alice)).toHaveText('Results chart');
+  await expect(alice.locator('.story-head').getByRole('textbox')).toHaveCount(0);
+  await shot(alice, 'jump-all-alice');
   await bob.close();
 });
 
@@ -282,7 +419,7 @@ test('custom session: tickets, vote, observer, export, end', async ({ page: alic
   await expect(bob.getByRole('button', { name: '21', exact: true })).toBeVisible();
   await alice.getByRole('button', { name: '3', exact: true }).click();
   await bob.getByRole('button', { name: '5', exact: true }).click();
-  for (const page of [alice, bob]) await expect(page.getByText('Avg: 4.0')).toBeVisible();
+  for (const page of [alice, bob]) await expect(page.getByText('2 Players')).toBeVisible();
   await shot(bob, 'custom-results-bob-390');
   await expect(alice.getByRole('complementary').getByRole('combobox')).toHaveValue('5');
   await alice.getByRole('button', { name: 'Finish Voting' }).click();
