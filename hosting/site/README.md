@@ -1,6 +1,6 @@
 # Sprint Pointing standalone Sites backend
 
-This source repository deploys both the frontend and backend. No local server, Docker, MCP, or tunnel is used.
+This folder deploys both the frontend and backend. No local server, Docker, MCP, or tunnel is used.
 
 - [worker/app.ts](./worker/app.ts) implements the meeting API and serves embedded frontend assets.
 - [worker/store.ts](./worker/store.ts) persists rooms and presence in D1 and serializes mutations with expiring leases.
@@ -13,8 +13,9 @@ Configure `JIRA_URL` (HTTPS origin), `JIRA_BOARD_ID`, `JIRA_POINTS_FIELD`, `JIRA
 in source, settings, build output, or logs. Encryption keys must remain stable while meetings are active.
 The manifest's `d1: "DB"` provisions the hosted database through Sites. There are no connected-app declarations.
 
-Run `npm run build` at the repository root first: this build embeds that frontend as `worker/assets.json` and copies
-`shared/protocol.ts`, both generated. Then run `npm ci`, `npm run build` and `npm run validate` here. The build emits
+If `worker/assets.json` is missing, run `npm run build` in the project folder first: this build embeds that frontend
+as `worker/assets.json` and copies `shared/protocol.ts`, both generated (the packaged project already includes them).
+Then run `npm ci`, `npm run build` and `npm run validate` here. The build emits
 `dist/server/index.js` and the hosting manifest; the Sites workflow packages the `drizzle/` migrations separately.
 Deployment steps and settings are in the root [README](../../README.md#deploy-on-chatgpt-sites).
 
